@@ -172,6 +172,7 @@ int main() {
     printf("Successfully killed %s", target_process);
     send_notification("Successfully killed DiscPlayer");
 
+    sleep(1); // wait for the process to terminate completely
 
     // send file
     if (etaHEN_filepath != NULL && kstuff_filepath == NULL) { // etaHEN only -> etaHEN found & no kstuff found 

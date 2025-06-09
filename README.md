@@ -31,7 +31,7 @@ git clone https://github.com/BenNoxXD/PS5-BDJ-HEN-loader
 cd PS5-BDJ-HEN-loader
 ```
 
-#### From scratch: 
+#### From scratch (optional): 
 Compile [hammer-83's ps5-jar-loader](https://github.com/hammer-83/ps5-jar-loader) and copy the `Status.class` located here: `ps5-jar-loader/xlet/target/classes/org/ps5jb/loader/Status.class`. Now you can paste this file here `HENloader_Java_part/org/ps5jb/loader/Status.class`. <br>
 
 ```sh
