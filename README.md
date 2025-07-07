@@ -10,6 +10,18 @@ Load etaHEN and/or kstuff from inside the PS5's Blu-ray player automatically, wi
 
 ---
 
+### Project parts:
+##### HENloader_C_part:
+Actual HENloader as an elf, which does the automatic disc closing stuff and sends HEN
+
+##### HENloader_Java_part:
+Just an elf-to-jar file wrapper which sends the included elf to 127.0.0.1:9021
+
+##### ClosePlayer:
+Only the close player part of the HENloader_C_part without HEN loading
+
+---
+
 ### Configurations:
 
 There are multiple configurations you can use:

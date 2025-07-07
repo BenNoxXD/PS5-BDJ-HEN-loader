@@ -11,12 +11,12 @@ else
     $(error PS5_PAYLOAD_SDK is undefined)
 endif
 
-ELF := HENloader.elf
+ELF := ClosePlayer.elf
 
 CFLAGS := -Wall -Werror -g
 LDFLAGS := -lSceSystemService
 
-SRCS = main.c $(wildcard src/*.c)
+SRCS = main.c $(wildcard ../HENloader_C_part/src/*.c)
 OBJS = $(SRCS:.c=.o)
 
 all: $(ELF)

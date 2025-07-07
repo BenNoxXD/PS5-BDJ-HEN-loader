@@ -8,20 +8,14 @@
 #include <string.h>
 #include <unistd.h>
 #include <stdbool.h>
-#include <signal.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdint.h>
-#include <sys/types.h>
-#include <sys/proc.h>
-#include <sys/user.h>
-#include <sys/sysctl.h>
-#include <ps5/kernel.h>
 
 #include "src/notification.h"
 #include "src/sendfile.h"
+#include "src/kill_disc_player.h"
 
 const char *target_process = "SceDiscPlayer";
+const char *target_title_id = "NPXS40140";
+const char *target_friendly_name = "Disc Player";
 
 const char *ip = "127.0.0.1";
 int port = 9021;
@@ -42,73 +36,7 @@ const char *no_kstuff_1 = "/mnt/usb0/no_kstuff";
 const char *no_kstuff_2 = "/data/etaHEN/no_kstuff";
 bool no_kstuff_file_available = false;
 
-typedef struct app_info {
-    uint32_t app_id;
-    uint64_t unknown1;
-    uint32_t app_type;
-    char     title_id[10];
-    char     unknown2[0x3c];
-} app_info_t;
-
-int sceLncUtilForceKillApp(int appId);
-  
-int sceKernelGetAppInfo(pid_t pid, app_info_t *info);
-
-uint32_t get_app_id_by_command(const char *target_command) { // Largely based on John Törnblom's ps paylod: https://github.com/ps5-payload-dev/sdk/blob/master/samples/ps/main.c
-  int mib[4] = {CTL_KERN, KERN_PROC, KERN_PROC_PROC, 0};
-  app_info_t appinfo;
-  size_t buf_size;
-  void *buf;
-
-  if (sysctl(mib, 4, NULL, &buf_size, NULL, 0)) {
-    perror("sysctl size");
-    return 0;
-  }
-
-  if (!(buf = malloc(buf_size))) {
-    perror("malloc");
-    return 0;
-  }
-
-  if (sysctl(mib, 4, buf, &buf_size, NULL, 0)) {
-    perror("sysctl data");
-    free(buf);
-    return 0;
-  }
-
-  for (void *ptr = buf; ptr < (buf + buf_size);) {
-    struct kinfo_proc *ki = (struct kinfo_proc *)ptr;
-    ptr += ki->ki_structsize;
-
-    if (strcmp(ki->ki_comm, target_command) != 0)
-      continue;
-
-    if (sceKernelGetAppInfo(ki->ki_pid, &appinfo)) {
-      memset(&appinfo, 0, sizeof(appinfo));
-    }
-
-    free(buf);
-    return appinfo.app_id;
-  }
-
-  free(buf);
-  return 0;
-}
-
 int main() {
-    uint32_t app_id = get_app_id_by_command(target_process);
-    char formatted[11];
-  
-    if (app_id) {
-        snprintf(formatted, sizeof(formatted), "0x%08x", app_id);
-        printf("AppId for %s: %04x\n", target_process, app_id);
-        printf("AppId for %s: %s\n", target_process, formatted);
-    } else {
-        printf("%s not found.\n", target_process);
-        send_notification("DiscPlayer isn't running - exiting");
-        return 1;
-    }
-
     // check file existence
     if (access(etaHEN_1, F_OK) == 0) {
         etaHEN_filepath = etaHEN_1;
@@ -157,21 +85,14 @@ int main() {
         printf("kstuff will be loaded from %s\n", kstuff_filepath);
     }
 
-    printf("Attempting to kill %s...\n", target_process);
-    send_notification("Attempting to kill DiscPlayer");
-
+    // kill DiscPlayer
     usleep(1750000); //1.75sec
 
-    int APP_ID = (int)strtol(formatted, NULL, 16);
-    int result = sceLncUtilForceKillApp(APP_ID);
-    if (result < 0) {
-        printf("Failed to kill %s - aborting\n", target_process);
-        send_notification("Failed to kill DiscPlayer - aborting");
+    if (kill_disc_player(target_process, target_title_id, target_friendly_name) != 0) { // error
+        printf("Exiting...\n");
+        send_notification("Exiting...");
         return 1;
     }
-    printf("Successfully killed %s", target_process);
-    send_notification("Successfully killed DiscPlayer");
-
     sleep(1); // wait for the process to terminate completely
 
     // send file
